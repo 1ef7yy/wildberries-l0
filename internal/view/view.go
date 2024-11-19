@@ -19,3 +19,4 @@ func NewView(logger logger.Logger) View {
 		domain: domain.NewDomain(logger),
 	}
 }
+

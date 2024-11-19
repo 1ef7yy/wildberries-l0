@@ -2,6 +2,7 @@ module wildberries/l0
 
 go 1.23.1
 
+
 require github.com/jackc/pgx/v5 v5.7.1
 
 require (
@@ -12,3 +13,4 @@ require (
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/text v0.18.0 // indirect
 )
+

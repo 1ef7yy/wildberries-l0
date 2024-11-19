@@ -19,3 +19,4 @@ func NewStorage(logger logger.Logger) Postgres {
 		Logger: logger,
 	}
 }
+
