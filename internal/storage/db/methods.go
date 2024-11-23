@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"encoding/json"
 	"wildberries/l0/internal/models"
 )
 
@@ -52,8 +53,8 @@ func (pg *Postgres) GetAllData() ([]models.Schema, error) {
 	return data, nil
 }
 
-func (pg *Postgres) InsertData(data models.Schema) error {
-	_, err := pg.Database.Exec(context.Background(), "INSERT INTO Data (orderUid, data) VALUES ($1, $2)", data.OrderUid, data.Data)
+func (pg *Postgres) InsertData(orderUid string, payload json.RawMessage) error {
+	_, err := pg.Database.Exec(context.Background(), "INSERT INTO Data (orderUid, data) VALUES ($1, $2)", orderUid, payload)
 	if err != nil {
 		pg.Logger.Error("Error inserting data: " + err.Error())
 		return err

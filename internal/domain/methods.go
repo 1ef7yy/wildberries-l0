@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"wildberries/l0/internal/models"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 func (d *domain) GetData(id string) (models.Schema, error) {
@@ -47,6 +49,40 @@ func (d *domain) RestoreCache() error {
 
 		d.cache.Set(record.OrderUid, domainData)
 	}
+
+	return nil
+}
+
+func (d *domain) HandleMessage(message kafka.Message) error {
+	var data models.Schema
+	data.OrderUid = string(message.Key)
+
+	err := json.Unmarshal(message.Value, &data.Data)
+	if err != nil {
+		d.Logger.Error("Unable to unmarshal data: " + err.Error())
+		return err
+	}
+
+	err = d.InsertData(data)
+	if err != nil {
+		d.Logger.Error("Unable to insert data: " + err.Error())
+		return err
+	}
+
+	return nil
+
+}
+
+func (d *domain) InsertData(data models.Schema) error {
+	orderUid := data.OrderUid
+
+	err := d.pg.InsertData(orderUid, data.Data)
+	if err != nil {
+		d.Logger.Error("Unable to insert data: " + err.Error())
+		return err
+	}
+
+	d.cache.Set(orderUid, data.Data)
 
 	return nil
 }

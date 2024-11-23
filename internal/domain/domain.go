@@ -7,6 +7,8 @@ import (
 	"wildberries/l0/internal/storage/cache"
 	"wildberries/l0/internal/storage/db"
 	"wildberries/l0/pkg/logger"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 type domain struct {
@@ -18,6 +20,8 @@ type domain struct {
 type Domain interface {
 	GetData(id string) (models.Schema, error)
 	RestoreCache() error
+	HandleMessage(message kafka.Message) error
+	InsertData(data models.Schema) error
 }
 
 func NewDomain(logger logger.Logger) Domain {
