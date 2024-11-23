@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 )
@@ -30,4 +31,10 @@ func (l *Logger) Warn(msg string) {
 
 func (l *Logger) Error(msg string) {
 	l.log.Error(msg)
+}
+
+func (l *Logger) Fatal(msg string) {
+	l.log.Error(msg)
+	fmt.Printf("Message above caused fatal\n")
+	os.Exit(1)
 }
