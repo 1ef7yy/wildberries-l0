@@ -1,39 +1,19 @@
 version: '3'
 
 services:
-  app:
-    build: .
-    ports:
-      - "8000:8000"
-    container_name: app
-    depends_on:
-      - db
-      - kafka
-    environment:
-      - SERVER_HOST=0.0.0.0
-      - SERVER_PORT=8000
-      - POSTGRES_DB=wb
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=admin
-      - POSTGRES_PORT=5432
-      - POSTGRES_HOST=db
-      - KAFKA_HOST=kafka
-      - KAFKA_TOPIC=orders
-
-    env_file:
-      - .env
-
   db:
+    container_name: db
     image: postgres:latest
     environment:
       - POSTGRES_DB=wb
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=admin
-
     env_file:
       - .env
     volumes:
       - db-data:/var/lib/postgresql/data
+    networks:
+      - rmoff_kafka
 
 
   migrate:
@@ -46,47 +26,68 @@ services:
       - .env
     depends_on:
       - db
+    networks:
+      - rmoff_kafka
 
 
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.3.0
+    image: confluentinc/cp-zookeeper:5.5.0
     container_name: zookeeper
+    networks: 
+      - rmoff_kafka
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
 
 
-  kafka:
-    image: confluentinc/cp-kafka:7.3.0
-    container_name: kafka
-    ports:
-      - "9092:9092"
+  broker:
+    image: confluentinc/cp-kafka:5.5.0
+    container_name: broker
+    networks: 
+      - rmoff_kafka
     depends_on:
       - zookeeper
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: "zookeper:2181"
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT, PLAINTEXT_INTERNAL:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_INTERNAL://localhost:9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
 
+  
   kafka-ui:
+    container_name: kafka-ui
     image: provectuslabs/kafka-ui:latest
     ports:
       - "9000:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: dev-local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: localhost:9092,broker:9092
       KAFKA_CLUSTERS_0_METRICS_PORT: 9997
       DYNAMIC_CONFIG_ENABLED: true
+    networks:
+      - rmoff_kafka
     depends_on:
-      - kafka
+      - broker
+
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    container_name: app
+    networks:
+      - rmoff_kafka
+    depends_on:
+      - db
+      - broker
+    env_file:
+      - .env
+
+
 
 volumes:
   db-data:
 
-networks:
-  app:
-    driver: bridge
+
+networks: 
+  rmoff_kafka:
+    name: rmoff_kafka
