@@ -1,22 +1,38 @@
 package db
 
 import (
+	"context"
+	"sync"
 	"wildberries/l0/pkg/logger"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type postgres struct {
-	Logger logger.Logger
-	db     *pgxpool.Pool
+type Postgres struct {
+	Logger   logger.Logger
+	Database *pgxpool.Pool
 }
 
-type Postgres interface {
+func NewPostgres(ctx context.Context, dsn string, log logger.Logger) *Postgres {
+	var (
+		pgInstance *Postgres
+		pgOnce     sync.Once
+	)
+
+	pgOnce.Do(func() {
+		db, err := pgxpool.New(ctx, dsn)
+		if err != nil {
+			log.Error("Unable to connect to database: " + err.Error())
+		}
+
+		pgInstance = &Postgres{
+			Logger:   log,
+			Database: db,
+		}
+	})
+	return pgInstance
 }
 
-func NewStorage(logger logger.Logger) Postgres {
-	return &postgres{
-		Logger: logger,
-	}
+func (pg *Postgres) Close() {
+	pg.Database.Close()
 }
-

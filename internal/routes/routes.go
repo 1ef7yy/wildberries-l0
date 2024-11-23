@@ -8,11 +8,9 @@ import (
 
 func InitRouter(view view.View) *http.ServeMux {
 	mux := http.NewServeMux()
-
 	v1 := v1.NewRouter(view)
 
-	mux.Handle("/ping", v1.Ping())
+	mux.Handle("/api/", v1.Endpoints())
 
 	return mux
-
 }
