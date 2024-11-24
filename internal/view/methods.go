@@ -15,36 +15,31 @@ func (v *view) GetData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := v.domain.GetData(id)
-	if data.OrderUid == "" {
-		v.Logger.Error(fmt.Sprintf("Data with id: %s not found", id))
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(w, "Data with id: %s not found", id)
-		return
-	}
+	data, err := v.domain.GetDataByID(id)
 	if err != nil {
 		v.Logger.Error("Error getting data: " + err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Internal server error: "+err.Error())
 		return
 	}
+	if data.OrderUid == "" {
+		v.Logger.Info(fmt.Sprintf("Data with id: %s not found", id))
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "Data with id: %s not found", id)
+		return
+	}
 
-	w.WriteHeader(http.StatusOK)
-	resp, err := json.Marshal(data)
+	resp, err := json.Marshal(&data)
 	if err != nil {
 		v.Logger.Error("Error marshaling data: " + err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Internal server error: "+err.Error())
 		return
 	}
+	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
 }
 
 func (v *view) RestoreCache() error {
-	err := v.domain.RestoreCache()
-	if err != nil {
-		v.Logger.Error("Error restoring cache: " + err.Error())
-		return err
-	}
-	return nil
+	return v.domain.RestoreCache()
 }

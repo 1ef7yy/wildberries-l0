@@ -11,9 +11,10 @@ type Logger struct {
 }
 
 func NewLogger() Logger {
-	// логгер в формате json
+	options := slog.HandlerOptions{Level: slog.LevelDebug}
+	handler := slog.NewJSONHandler(os.Stdout, &options)
 	return Logger{
-		log: slog.New(slog.NewJSONHandler(os.Stdout, nil)),
+		log: slog.New(handler),
 	}
 }
 

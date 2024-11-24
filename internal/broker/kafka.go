@@ -1,7 +1,7 @@
 package broker
 
 import (
-	"fmt"
+	"wildberries/l0/internal/models"
 	"wildberries/l0/pkg/logger"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -17,6 +17,11 @@ type OrderPlacer struct {
 type OrderConsumer struct {
 	log      logger.Logger
 	consumer *kafka.Consumer
+}
+
+type Broker interface {
+	Listen()
+	PlaceOrder(models.Order)
 }
 
 func NewOrderPlacer(p *kafka.Producer, topic string) *OrderPlacer {
@@ -44,50 +49,4 @@ func NewOrderConsumer(hosts, groupID string) *OrderConsumer {
 		log:      log,
 		consumer: kafkaConsumer,
 	}
-}
-
-func (op *OrderPlacer) PlaceOrder(orderType string, size int) error {
-
-	var (
-		format  = fmt.Sprintf("%s - %d", orderType, size)
-		payload = []byte(format)
-	)
-
-	err := op.producer.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{
-			Topic:     &op.topic,
-			Partition: kafka.PartitionAny,
-		},
-		Value: payload,
-	}, op.deliverych)
-
-	if err != nil {
-		op.log.Error("Error producing message: " + err.Error())
-		return err
-	}
-
-	return nil
-
-}
-
-func (oc *OrderConsumer) Listen(topic string, handleFunc func(kafka.Message)) error {
-	err := oc.consumer.Subscribe(topic, nil)
-
-	if err != nil {
-		oc.log.Error("Error subscribing to topic: " + err.Error())
-		return err
-	}
-
-	for {
-		ev := oc.consumer.Poll(100)
-		switch e := ev.(type) {
-		case *kafka.Message:
-			oc.log.Info(fmt.Sprintf("Message received. Key: %s, Value: %s. Partition: %d, Offset: %d\n", string(e.Key), string(e.Value), e.TopicPartition.Partition, e.TopicPartition.Offset))
-			handleFunc(*e)
-		case kafka.Error:
-			oc.log.Error("Error from consumer: " + e.Error())
-			return e
-		}
-	}
-
 }

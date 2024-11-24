@@ -17,11 +17,12 @@ import (
 
 func main() {
 	log := logger.NewLogger()
+
 	log.Info("Starting server...")
 
-	view := view.NewView(log)
-
 	domain := domain.NewDomain(log)
+
+	view := view.NewView(log, domain)
 
 	log.Info("Initializing router...")
 
@@ -39,44 +40,25 @@ func main() {
 
 	log.Info("Server started on: " + os.Getenv("SERVER_ADDRESS"))
 
+	kafkaHandleFunc := func(m kafka.Message) {
+		err := domain.HandleMessage(m)
+		if err != nil {
+			log.Error("Error handling message: " + err.Error())
+		}
+	}
+	oc := broker.NewOrderConsumer("broker:9092", "orders_group_id")
+
 	go func() {
 		log.Info("Starting broker...")
-		oc := broker.NewOrderConsumer("broker:9092", "orders_group_id")
-		err = oc.Listen("orders", func(m kafka.Message) {
-			err := domain.HandleMessage(m)
-			if err != nil {
-				log.Error("Error handling message: " + err.Error())
-			}
-		})
+		err = oc.Listen("orders", kafkaHandleFunc)
 
 		if err != nil {
 			log.Error("Error listening to topic: " + err.Error())
 		}
 	}()
 
-	if err := http.ListenAndServe(os.Getenv("SERVER_ADDRESS"), mux); err != nil {
+	if err = http.ListenAndServe(os.Getenv("SERVER_ADDRESS"), mux); err != nil {
 		log.Error("Error starting server: " + err.Error())
 	}
-
-	// log := logger.NewLogger()
-	// p, err := kafka.NewProducer(&kafka.ConfigMap{
-	// 	"bootstrap.servers": "kafka:9092,localhost:9092",
-	// 	"client.id":         "orders",
-	// 	"acks":              "all",
-	// })
-
-	// if err != nil {
-	// 	log.Error("Failed to create producer: " + err.Error())
-	// }
-
-	// deliverch := make(chan kafka.Event, 10000)
-	// topic := "orders"
-	// err = p.Produce(&kafka.Message{
-	// 	TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-	// 	Value:          []byte(`{"test": "test"}`),
-	// }, deliverch)
-	// if err != nil {
-	// 	log.Error("Failed to produce message: " + err.Error())
-	// }
 
 }

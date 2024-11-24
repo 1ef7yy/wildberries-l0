@@ -18,10 +18,10 @@ type domain struct {
 }
 
 type Domain interface {
-	GetData(id string) (models.Schema, error)
+	GetDataByID(id string) (models.Order, error)
 	RestoreCache() error
 	HandleMessage(message kafka.Message) error
-	InsertData(data models.Schema) error
+	InsertData(data models.Order) error
 }
 
 func NewDomain(logger logger.Logger) Domain {
