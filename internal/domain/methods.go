@@ -8,7 +8,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
-func (d *domain) GetData(id string) (models.Schema, error) {
+func (d *domain) GetDataByID(id string) (models.Order, error) {
 	data, ok := d.cache.Get(id)
 
 	if !ok {
@@ -18,18 +18,13 @@ func (d *domain) GetData(id string) (models.Schema, error) {
 
 		if err != nil {
 			d.Logger.Error("Error getting data: " + err.Error())
-			return models.Schema{}, err
-		}
-
-		if data.OrderUid == "" {
-			d.Logger.Error(fmt.Sprintf("Data with id: %s not found", id))
-			return models.Schema{}, fmt.Errorf("data with id: %s not found", id)
+			return models.Order{}, err
 		}
 
 		d.cache.Set(data.OrderUid, data.Data)
 	}
 
-	return models.Schema{OrderUid: id, Data: data}, nil
+	return models.Order{OrderUid: id, Data: data}, nil
 }
 
 func (d *domain) RestoreCache() error {
@@ -54,7 +49,7 @@ func (d *domain) RestoreCache() error {
 }
 
 func (d *domain) HandleMessage(message kafka.Message) error {
-	var data models.Schema
+	var data models.Order
 	data.OrderUid = string(message.Key)
 
 	err := json.Unmarshal(message.Value, &data.Data)
@@ -73,7 +68,7 @@ func (d *domain) HandleMessage(message kafka.Message) error {
 
 }
 
-func (d *domain) InsertData(data models.Schema) error {
+func (d *domain) InsertData(data models.Order) error {
 	orderUid := data.OrderUid
 
 	err := d.pg.InsertData(orderUid, data.Data)

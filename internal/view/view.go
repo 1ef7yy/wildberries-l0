@@ -16,9 +16,9 @@ type View interface {
 	RestoreCache() error
 }
 
-func NewView(logger logger.Logger) View {
+func NewView(logger logger.Logger, domain domain.Domain) View {
 	return &view{
 		Logger: logger,
-		domain: domain.NewDomain(logger),
+		domain: domain,
 	}
 }

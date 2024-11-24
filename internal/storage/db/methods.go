@@ -6,13 +6,13 @@ import (
 	"wildberries/l0/internal/models"
 )
 
-func (pg *Postgres) GetDataByID(id string) (models.Schema, error) {
+func (pg *Postgres) GetDataByID(id string) (models.Order, error) {
 	val, err := pg.Database.Query(context.Background(), "SELECT * FROM data WHERE orderUid = $1", id)
 	if err != nil {
-		return models.Schema{}, err
+		return models.Order{}, err
 	}
 
-	var data models.Schema
+	var data models.Order
 
 	defer val.Close()
 
@@ -20,7 +20,7 @@ func (pg *Postgres) GetDataByID(id string) (models.Schema, error) {
 		err := val.Scan(&data.OrderUid, &data.Data)
 		if err != nil {
 			pg.Logger.Error("Error scanning data: " + err.Error())
-			return models.Schema{}, err
+			return models.Order{}, err
 		}
 
 	}
@@ -29,18 +29,18 @@ func (pg *Postgres) GetDataByID(id string) (models.Schema, error) {
 
 }
 
-func (pg *Postgres) GetAllData() ([]models.Schema, error) {
+func (pg *Postgres) GetAllData() ([]models.Order, error) {
 	val, err := pg.Database.Query(context.Background(), "SELECT * FROM data")
 	if err != nil {
 		return nil, err
 	}
 
-	var data []models.Schema
+	var data []models.Order
 
 	defer val.Close()
 
-	if val.Next() {
-		var d models.Schema
+	for val.Next() {
+		var d models.Order
 		err := val.Scan(&d.OrderUid, &d.Data)
 		if err != nil {
 			pg.Logger.Error("Error scanning data: " + err.Error())
@@ -48,6 +48,7 @@ func (pg *Postgres) GetAllData() ([]models.Schema, error) {
 		}
 
 		data = append(data, d)
+
 	}
 
 	return data, nil

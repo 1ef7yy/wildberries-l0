@@ -57,7 +57,7 @@
 
 
 TODO:
-- [ ] Kafka
+- [x] Kafka
 - [ ] Testing
 - [ ] Data validation
 - [ ] UI
