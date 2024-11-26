@@ -21,6 +21,11 @@ func (d *domain) GetDataByID(id string) (models.Order, error) {
 			return models.Order{}, err
 		}
 
+		if data.OrderUid == "" {
+			return models.Order{
+				OrderUid: "",
+			}, nil
+		}
 		d.cache.Set(data.OrderUid, data.Data)
 	}
 
@@ -52,6 +57,16 @@ func (d *domain) HandleMessage(message kafka.Message) error {
 	var data models.Order
 	data.OrderUid = string(message.Key)
 
+	if !MessageIsJSON(message.Value) {
+		d.Logger.Info("Data is not json, ignored message")
+		return nil
+	}
+
+	if data.OrderUid == "" {
+		d.Logger.Error("OrderUid is empty, ignored message")
+		return nil
+	}
+
 	err := json.Unmarshal(message.Value, &data.Data)
 	if err != nil {
 		d.Logger.Error("Unable to unmarshal data: " + err.Error())
@@ -80,4 +95,8 @@ func (d *domain) InsertData(data models.Order) error {
 	d.cache.Set(orderUid, data.Data)
 
 	return nil
+}
+
+func MessageIsJSON(msg []byte) bool {
+	return len(msg) > 1 && msg[0] == '{' && msg[len(msg)-1] == '}'
 }

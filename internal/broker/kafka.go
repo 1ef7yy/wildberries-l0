@@ -1,18 +1,16 @@
 package broker
 
 import (
+	"os"
 	"wildberries/l0/internal/models"
 	"wildberries/l0/pkg/logger"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
-type OrderPlacer struct {
-	log        logger.Logger
-	producer   *kafka.Producer
-	topic      string
-	deliverych chan kafka.Event
-}
+var (
+	KafkaConn = os.Getenv("KAFKA_CONN")
+)
 
 type OrderConsumer struct {
 	log      logger.Logger
@@ -22,14 +20,6 @@ type OrderConsumer struct {
 type Broker interface {
 	Listen()
 	PlaceOrder(models.Order)
-}
-
-func NewOrderPlacer(p *kafka.Producer, topic string) *OrderPlacer {
-	return &OrderPlacer{
-		log:        logger.NewLogger(),
-		producer:   p,
-		topic:      topic,
-		deliverych: make(chan kafka.Event, 10000)}
 }
 
 func NewOrderConsumer(hosts, groupID string) *OrderConsumer {

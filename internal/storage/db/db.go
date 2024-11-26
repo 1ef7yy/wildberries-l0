@@ -13,16 +13,18 @@ type Postgres struct {
 	Database *pgxpool.Pool
 }
 
-func NewPostgres(ctx context.Context, dsn string, log logger.Logger) *Postgres {
+func NewPostgres(ctx context.Context, dsn string, log logger.Logger) (*Postgres, error) {
 	var (
 		pgInstance *Postgres
 		pgOnce     sync.Once
+		PgErr      error
 	)
 
 	pgOnce.Do(func() {
 		db, err := pgxpool.New(ctx, dsn)
 		if err != nil {
 			log.Error("Unable to connect to database: " + err.Error())
+			PgErr = err
 		}
 
 		pgInstance = &Postgres{
@@ -30,7 +32,11 @@ func NewPostgres(ctx context.Context, dsn string, log logger.Logger) *Postgres {
 			Database: db,
 		}
 	})
-	return pgInstance
+
+	if PgErr != nil {
+		return nil, PgErr
+	}
+	return pgInstance, nil
 }
 
 func (pg *Postgres) Close() {

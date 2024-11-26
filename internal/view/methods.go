@@ -32,6 +32,7 @@ func (v *view) GetData(w http.ResponseWriter, r *http.Request) {
 	resp, err := json.Marshal(&data)
 	if err != nil {
 		v.Logger.Error("Error marshaling data: " + err.Error())
+		v.Logger.Debug(fmt.Sprintf("Data: %v", data))
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Internal server error: "+err.Error())
 		return

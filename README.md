@@ -58,8 +58,6 @@
 
 TODO:
 - [x] Kafka
-- [ ] Testing
 - [ ] Data validation
-- [ ] UI
-- [ ] Log write
-- [ ] Stress testing
+- [x] Log write
+- [x] Stress testing
