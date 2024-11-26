@@ -18,8 +18,6 @@ import (
 func main() {
 	log := logger.NewLogger()
 
-	log.Info("Starting server...")
-
 	domain := domain.NewDomain(log)
 
 	view := view.NewView(log, domain)
@@ -38,15 +36,13 @@ func main() {
 
 	log.Info("Cache restored...")
 
-	log.Info("Server started on: " + os.Getenv("SERVER_ADDRESS"))
-
 	kafkaHandleFunc := func(m kafka.Message) {
 		err := domain.HandleMessage(m)
 		if err != nil {
 			log.Error("Error handling message: " + err.Error())
 		}
 	}
-	oc := broker.NewOrderConsumer("broker:9092", "orders_group_id")
+	oc := broker.NewOrderConsumer(os.Getenv("KAFKA_CONN"), "orders_group_id")
 
 	go func() {
 		log.Info("Starting broker...")
@@ -57,7 +53,8 @@ func main() {
 		}
 	}()
 
-	if err = http.ListenAndServe(os.Getenv("SERVER_ADDRESS"), mux); err != nil {
+	log.Info("Server started on: " + os.Getenv("SERVER_ADDRESS"))
+	if err := http.ListenAndServe(os.Getenv("SERVER_ADDRESS"), mux); err != nil {
 		log.Error("Error starting server: " + err.Error())
 	}
 
